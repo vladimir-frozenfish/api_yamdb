@@ -20,6 +20,7 @@ class User(AbstractUser):
     добавление в базового юзера двух полей - role и bio
     в role указан параметр default='user', чтобы можно было создать суперюзера
     """
+
     role_user = (
         ('user', 'user'),
         ('moderator', 'moderator'),
@@ -30,7 +31,7 @@ class User(AbstractUser):
         'Биография',
         blank=True,
     )
-    
+
     @property
     def is_admin(self):
         return (self.is_staff or self.role == 'admin'
@@ -42,8 +43,6 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
-    
-    
 
 
 class Category(models.Model):
