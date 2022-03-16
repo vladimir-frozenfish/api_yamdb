@@ -1,7 +1,18 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from reviews.models import Comment, Review
+from reviews.models import Comment, Review, User
+
+class UserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = (
+            'bio', 'email', 'first_name', 'last_name', 'role', 'username')
+        model = User
+        
+    def validate_username(self, value):
+        
+        pass
 
 
 class ReviewSerializer(serializers.ModelSerializer):

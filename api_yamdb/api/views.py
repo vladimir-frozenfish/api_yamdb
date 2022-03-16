@@ -1,9 +1,39 @@
+from api_yamdb.settings import SERVICE_EMAIL
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from rest_framework import status, viewsets
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from reviews.models import Comment, Review, Title, User
 
-from reviews.models import Comment, Review, Title
+from .serializers import CommentSerializer, ReviewSerializer, UserSerializer
 
-from .serializers import CommentSerializer, ReviewSerializer
+
+@api_view(['POST'])
+def send_register_code(request):
+    username = request.data.get('username')
+    email = request.data.get('email')
+    data = {'username': username,
+            'email': email}
+    serializer = UserSerializer(data=data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    confirmation_code = User.objects.get(username=username).confirmation_code
+    send_mail(
+        'Служба технического сопровождения YAMDB services',
+        f'Привет! Держи свой код доступа {confirmation_code}.',
+        SERVICE_EMAIL,
+        [email],
+        fail_silently=False
+        
+    )
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def get_jwt_token(request):
+    
+    pass
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
