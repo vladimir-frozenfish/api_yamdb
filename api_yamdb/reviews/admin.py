@@ -18,7 +18,7 @@ class GenreAdmin(admin.ModelAdmin):
 
 
 class TitleAdmin(admin.ModelAdmin):
-    list_display = ('name', 'year', 'description', 'category', 'get_genre')
+    list_display = ('id', 'name', 'year', 'description', 'category', 'get_genre')
 
 
 class GenreTitleAdmin(admin.ModelAdmin):
