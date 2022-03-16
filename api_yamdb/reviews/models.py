@@ -1,11 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-role_user = (
-    ('user', 'user'),
-    ('moderator', 'moderator'),
-    ('admin', 'admin')
-)
 
 score = (
     (1, 1),
@@ -26,11 +21,30 @@ class User(AbstractUser):
     добавление в базового юзера двух полей - role и bio
     в role указан параметр default='user', чтобы можно было создать суперюзера
     """
+
+    role_user = (
+        ('user', 'user'),
+        ('moderator', 'moderator'),
+        ('admin', 'admin')
+    )
+
     role = models.CharField(max_length=16, choices=role_user, default='user')
     bio = models.TextField(
         'Биография',
         blank=True,
     )
+
+    @property
+    def is_admin(self):
+        return (self.is_staff or self.role == 'admin'
+                or self.is_superuser)
+
+    @property
+    def is_moderator(self):
+        return (self.role == 'moderator' or self.is_superuser)
+
+    def __str__(self):
+        return self.username
 
 
 class Category(models.Model):
