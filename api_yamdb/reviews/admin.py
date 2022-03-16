@@ -40,3 +40,5 @@ admin.site.register(Title, TitleAdmin)
 admin.site.register(GenreTitle, GenreTitleAdmin)
 admin.site.register(Review, ReviewAdmin)
 admin.site.register(Comment, CommentAdmin)
+
+
