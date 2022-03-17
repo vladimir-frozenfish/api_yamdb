@@ -1,9 +1,15 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, permissions
 
+from rest_framework_simplejwt.views import TokenObtainPairView
+
 from reviews.models import Comment, Review, Title
 
 from .serializers import CommentSerializer, ReviewSerializer
+
+
+class GetToken(TokenObtainPairView):
+    pass
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
