@@ -15,7 +15,7 @@ from .serializers import CommentSerializer, ReviewSerializer
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def get_token(request):
-    user = get_object_or_404(User, username=request.data['username'])
+    user = get_object_or_404(User, username=request.data.get('username'))
     password = request.data['confirmation_code']
     user = authenticate(username=user, password=password)
 
