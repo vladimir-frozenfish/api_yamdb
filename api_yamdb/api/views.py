@@ -1,15 +1,50 @@
 from django.shortcuts import get_object_or_404
-from django.contrib.auth import authenticate
+from rest_framework import viewsets, mixins, filters
+from django_filters.rest_framework import DjangoFilterBackend
 
-from rest_framework.response import Response
-from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import api_view, permission_classes
+from reviews.models import Review, Title, Category, Genre
+from .permissions import AdminOrReadOnly
+from .serializers import (
+    CommentSerializer,
+    ReviewSerializer,
+    CategorySerializer,
+    GenreSerializer,
+    TitleSerializer,
+)
 
-from rest_framework_simplejwt.tokens import AccessToken
 
-from reviews.models import Comment, Review, Title, User
+class ListCreateDeleteViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    pass
 
-from .serializers import CommentSerializer, ReviewSerializer
+from reviews.models import Comment, Review, Title
+
+class CategoryViewSet(ListCreateDeleteViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = (AdminOrReadOnly,)
+    filter_backends = [filters.SearchFilter]
+    search_fields = ("name",)
+
+
+class GenreViewSet(ListCreateDeleteViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = (AdminOrReadOnly,)
+    filter_backends = [filters.SearchFilter]
+    search_fields = ("name",)
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    permission_classes = (AdminOrReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ("category__slug", "genre__slug", "name", "year")
 
 from .permissions import IsAuthorOrReadOnly
 

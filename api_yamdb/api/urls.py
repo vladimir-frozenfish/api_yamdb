@@ -2,9 +2,15 @@ from django.urls import path, include
 
 from rest_framework import routers
 
-from rest_framework_simplejwt.views import TokenObtainPairView
+from .views import (
+    CommentViewSet,
+    ReviewViewSet,
+    CategoryViewSet,
+    GenreViewSet,
+    TitleViewSet,
+    get_token
+)
 
-from .views import CommentViewSet, ReviewViewSet, get_token
 
 app_name = 'api'
 
@@ -16,6 +22,9 @@ router.register(
 router.register(
     r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments', CommentViewSet, basename='reviews'
 )
+router.register("categories", CategoryViewSet)
+router.register("genres", GenreViewSet)
+router.register("titles", TitleViewSet)
 
 
 urlpatterns = [
