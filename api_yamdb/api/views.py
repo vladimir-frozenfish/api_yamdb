@@ -15,7 +15,11 @@ from .serializers import CommentSerializer, ReviewSerializer
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def get_token(request):
-    user = get_object_or_404(User, username=request.data.get('username'))
+    username = request.data.get('username')
+    if username is None:
+        return Response({'Сообщение': 'Заполните поля'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = get_object_or_404(User, username=username)
     password = request.data['confirmation_code']
     user = authenticate(username=user, password=password)
 
@@ -23,7 +27,7 @@ def get_token(request):
         token = AccessToken.for_user(user)
         return Response({'access': str(token)}, status=status.HTTP_200_OK)
 
-    return Response({'Сообщение': 'Неправильный confirmation_code'}, status=status.HTTP_401_UNAUTHORIZED)
+    return Response({'Сообщение': 'Неправильный confirmation_code'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
