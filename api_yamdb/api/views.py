@@ -1,9 +1,15 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, mixins, filters
+from django.contrib.auth import authenticate
+
+from rest_framework.response import Response
+from rest_framework import viewsets, mixins, filters, permissions, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework_simplejwt.tokens import AccessToken
+
 from django_filters.rest_framework import DjangoFilterBackend
 
-from reviews.models import Review, Title, Category, Genre
-from .permissions import AdminOrReadOnly
+from reviews.models import Review, Title, Category, Genre, User
+from .permissions import AdminOrReadOnly, IsAuthorOrReadOnly
 from .serializers import (
     CommentSerializer,
     ReviewSerializer,
@@ -21,7 +27,6 @@ class ListCreateDeleteViewSet(
 ):
     pass
 
-from reviews.models import Comment, Review, Title
 
 class CategoryViewSet(ListCreateDeleteViewSet):
     queryset = Category.objects.all()
@@ -45,8 +50,6 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (AdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ("category__slug", "genre__slug", "name", "year")
-
-from .permissions import IsAuthorOrReadOnly
 
 
 @api_view(['POST'])
