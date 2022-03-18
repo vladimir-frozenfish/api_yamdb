@@ -2,8 +2,9 @@ from api_yamdb.settings import SERVICE_EMAIL
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, status, viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import Comment, Review, Title, User
 
 from .serializers import CommentSerializer, ReviewSerializer, UserSerializer
@@ -46,20 +47,25 @@ def get_token(request):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    permission_classes = (AdminPermission,)   ### Указать правильный пермишен
-    
+    permission_classes = (AdminPermission,)  ### Указать правильный пермишен
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
     filter_backends = (filters.SearchFilter, )
     search_fields = ('username',)
-    
-    pass
-
-
-
-
-
+    @action(methods=['GET', 'PATCH'], url_path='me',
+            permission_classes=(permissions.IsAuthenticated,),  ### Указать правильный пермишен
+            detail=False, url_path='me')
+    def get_patch_mixin(self, request):
+        if request.method == 'GET':
+            serializer = self.get_serializer(request.user, many=False)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(
+            instance=request.user,
+            data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(role=request.user.role)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
