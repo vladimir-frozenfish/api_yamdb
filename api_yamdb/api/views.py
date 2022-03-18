@@ -1,15 +1,29 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, permissions
+from django.contrib.auth import authenticate
 
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.response import Response
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import api_view, permission_classes
 
-from reviews.models import Comment, Review, Title
+from rest_framework_simplejwt.tokens import AccessToken
+
+from reviews.models import Comment, Review, Title, User
 
 from .serializers import CommentSerializer, ReviewSerializer
 
 
-class GetToken(TokenObtainPairView):
-    pass
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def get_token(request):
+    user = get_object_or_404(User, username=request.data['username'])
+    password = request.data['confirmation_code']
+    user = authenticate(username=user, password=password)
+
+    if user:
+        token = AccessToken.for_user(user)
+        return Response({'access': str(token)}, status=status.HTTP_200_OK)
+
+    return Response({'Сообщение': 'Неправильный confirmation_code'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
