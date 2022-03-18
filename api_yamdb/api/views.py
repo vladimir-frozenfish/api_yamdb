@@ -19,6 +19,27 @@ from .serializers import (
 )
 
 
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def get_token(request):
+    """функция получения токена,
+    в качестве confirmation_code - используется password"""
+
+    username = request.data.get('username')
+    if username is None:
+        return Response({'Сообщение': 'Заполните поля'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = get_object_or_404(User, username=username)
+    password = request.data['confirmation_code']
+    user = authenticate(username=user, password=password)
+
+    if user:
+        token = AccessToken.for_user(user)
+        return Response({'access': str(token)}, status=status.HTTP_200_OK)
+
+    return Response({'Сообщение': 'Неправильный confirmation_code'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class ListCreateDeleteViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -50,24 +71,6 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (AdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ("category__slug", "genre__slug", "name", "year")
-
-
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def get_token(request):
-    username = request.data.get('username')
-    if username is None:
-        return Response({'Сообщение': 'Заполните поля'}, status=status.HTTP_400_BAD_REQUEST)
-
-    user = get_object_or_404(User, username=username)
-    password = request.data['confirmation_code']
-    user = authenticate(username=user, password=password)
-
-    if user:
-        token = AccessToken.for_user(user)
-        return Response({'access': str(token)}, status=status.HTTP_200_OK)
-
-    return Response({'Сообщение': 'Неправильный confirmation_code'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
