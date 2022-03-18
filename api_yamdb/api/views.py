@@ -11,6 +11,8 @@ from reviews.models import Comment, Review, Title, User
 
 from .serializers import CommentSerializer, ReviewSerializer
 
+from .permissions import IsAuthorOrReadOnly
+
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
@@ -32,13 +34,30 @@ def get_token(request):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,
+                          IsAuthorOrReadOnly]
 
     def get_queryset(self):
         title_id = self.kwargs.get("title_id")
         title = get_object_or_404(Title, id=title_id)
         new_queryset = title.reviews.all()
         return new_queryset
+
+    def create(self, request, *args, **kwargs):
+        user = self.request.user
+
+        title_id = self.kwargs.get("title_id")
+        title = get_object_or_404(Title, id=title_id)
+
+        if Review.objects.filter(title=title, author=user).exists():
+            return Response({"message": "Автор уже оставлял отзыв на это призведение"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = ReviewSerializer(data=request.data)
+
+        if serializer.is_valid(raise_exception=True):
+            serializer.save(author=user, title=title)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
