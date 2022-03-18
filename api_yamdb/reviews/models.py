@@ -23,75 +23,80 @@ class User(AbstractUser):
     """
 
     role_user = (
-        ('user', 'user'),
-        ('moderator', 'moderator'),
-        ('admin', 'admin')
+        ("user", "user"),
+        ("moderator", "moderator"),
+        ("admin", "admin"),
     )
 
-    role = models.CharField(max_length=16, choices=role_user, default='user')
+    role = models.CharField(max_length=16, choices=role_user, default="user")
     bio = models.TextField(
-        'Биография',
+        "Биография",
         blank=True,
     )
 
     @property
     def is_admin(self):
-        return (self.is_staff or self.role == 'admin'
-                or self.is_superuser)
+        return self.is_staff or self.role == "admin" or self.is_superuser
 
     @property
     def is_moderator(self):
-        return (self.role == 'moderator' or self.is_superuser)
+        return self.role == "moderator" or self.is_superuser
 
     def __str__(self):
         return self.username
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Категория')
-    slug = models.SlugField(max_length=50, unique=True, verbose_name='URL_categorie')
+    name = models.CharField(max_length=256, verbose_name="Категория")
+    slug = models.SlugField(
+        max_length=50, unique=True, verbose_name="URL_categorie"
+    )
 
     class Meta:
-        verbose_name_plural = 'Категории'
-        verbose_name = 'Категория'
+        verbose_name_plural = "Категории"
+        verbose_name = "Категория"
 
     def __str__(self):
         return self.name
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Жанр')
-    slug = models.SlugField(max_length=50, unique=True, verbose_name='URL_genre')
+    name = models.CharField(max_length=256, verbose_name="Жанр")
+    slug = models.SlugField(
+        max_length=50, unique=True, verbose_name="URL_genre"
+    )
 
     class Meta:
-        verbose_name_plural = 'Жанры'
-        verbose_name = 'Жанр'
+        verbose_name_plural = "Жанры"
+        verbose_name = "Жанр"
 
     def __str__(self):
         return self.name
 
 
 class Title(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Имя_произведения')
-    year = models.IntegerField(verbose_name='Год_создания_произведения')
-    description = models.TextField(verbose_name='Описание_произведения')
-    category = models.ForeignKey(Category,
-                                 on_delete=models.SET_NULL,
-                                 blank=True,
-                                 null=True,
-                                 related_name='category',
-                                 verbose_name='Категория_произведения')
-    genre = models.ManyToManyField(Genre, through='GenreTitle')
+    name = models.CharField(max_length=256, verbose_name="Имя_произведения")
+    year = models.IntegerField(verbose_name="Год_создания_произведения")
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="titles",
+        verbose_name="Категория_произведения",
+    )
+    description = models.TextField(verbose_name="Описание_произведения")
+    genre = models.ManyToManyField(Genre, through="GenreTitle")
 
     def get_genre(self):
         """получение жанров конкретного произведения - для админки"""
-        return ', '.join([genre.name for genre in self.genre.all()])
+        return ", ".join([genre.name for genre in self.genre.all()])
 
-    get_genre.short_description = 'Жанры произведения'
+    get_genre.short_description = "Жанры произведения"
 
     class Meta:
-        verbose_name_plural = 'Произведения'
-        verbose_name = 'Произведение'
+        verbose_name_plural = "Произведения"
+        verbose_name = "Произведение"
 
     def __str__(self):
         return self.name
@@ -99,32 +104,35 @@ class Title(models.Model):
 
 class GenreTitle(models.Model):
     """вспомогательная модель для работы с жанрами конкретного произведения"""
+
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
     title = models.ForeignKey(Title, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'{self.genre} {self.title}'
+        return f"{self.genre} {self.title}"
 
 
 class Review(models.Model):
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='reviews')
+        User, on_delete=models.CASCADE, related_name="reviews"
+    )
     title = models.ForeignKey(
-        Title, on_delete=models.CASCADE, related_name='reviews')
+        Title, on_delete=models.CASCADE, related_name="reviews"
+    )
     text = models.TextField()
     score = models.IntegerField(choices=score)
     pub_date = models.DateTimeField(
-        'Дата добавления', auto_now_add=True, db_index=True)
+        "Дата добавления", auto_now_add=True, db_index=True
+    )
 
     class Meta:
-        verbose_name_plural = 'Отзывы'
-        verbose_name = 'Отзыв'
+        verbose_name_plural = "Отзывы"
+        verbose_name = "Отзыв"
 
         # отзыв к произведению от автора может быть только один
         constraints = [
             models.UniqueConstraint(
-                fields=['author', 'title'],
-                name='unique_user_following'
+                fields=["author", "title"], name="unique_user_following"
             )
         ]
 
@@ -134,16 +142,19 @@ class Review(models.Model):
 
 class Comment(models.Model):
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='comments')
+        User, on_delete=models.CASCADE, related_name="comments"
+    )
     review = models.ForeignKey(
-        Review, on_delete=models.CASCADE, related_name='comments')
+        Review, on_delete=models.CASCADE, related_name="comments"
+    )
     text = models.TextField()
     pub_date = models.DateTimeField(
-        'Дата добавления', auto_now_add=True, db_index=True)
+        "Дата добавления", auto_now_add=True, db_index=True
+    )
 
     class Meta:
-        verbose_name_plural = 'Комментарии к отзывам'
-        verbose_name = 'Комментарий к отзыву'
+        verbose_name_plural = "Комментарии к отзывам"
+        verbose_name = "Комментарий к отзыву"
 
     def __str__(self):
         return self.text[:20]
