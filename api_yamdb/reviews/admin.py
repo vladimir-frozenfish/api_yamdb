@@ -3,19 +3,14 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from .models import Category, Comment, Genre, GenreTitle, Review, User, Title
 
-'''
+
 class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'role', 'email', 'first_name', 'last_name', 'bio')
-'''
 
+'''
 class UserAdmin(BaseUserAdmin):
     list_display = ('username', 'role', 'email', 'first_name', 'last_name', 'bio')
-
-    add_fieldsets = (
-        (None, {
-            'fields': ('username', 'password', 'email', 'role'),
-        }),
-    )
+'''
 
 
 class CategoryAdmin(admin.ModelAdmin):

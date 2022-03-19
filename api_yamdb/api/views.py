@@ -5,7 +5,7 @@ from django.contrib.auth import authenticate
 
 from rest_framework.response import Response
 from rest_framework import viewsets, mixins, filters, permissions, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework_simplejwt.tokens import AccessToken
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -25,6 +25,7 @@ from .serializers import CommentSerializer, ReviewSerializer, UserSerializer
 
 
 @api_view(['POST'])
+@permission_classes([permissions.AllowAny])
 def send_register_code(request):
     username = request.data.get('username')
     email = request.data.get('email')
@@ -46,6 +47,7 @@ def send_register_code(request):
 
 
 @api_view(['POST'])
+@permission_classes([permissions.AllowAny])
 def get_token(request):
     username = request.data.get('username')
     if username is None:
@@ -57,11 +59,11 @@ def get_token(request):
         return Response(response, status=status.HTTP_400_BAD_REQUEST)
     token = AccessToken.for_user(user)
 
-    return Response({f'token: {token}'}, status=status.HTTP_200_OK)
+    return Response({'access': str(token)}, status=status.HTTP_200_OK)
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    permission_classes = (AdminPermission,)  ### Указать правильный пермишен
+    permission_classes = (AdminOrReadOnly,)  ### Указать правильный пермишен
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
@@ -70,7 +72,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(methods=['GET', 'PATCH'], url_path='me',
             permission_classes=(permissions.IsAuthenticated,),  ### Указать правильный пермишен
-            detail=False, url_path='me')
+            detail=False)
     def get_patch_mixin(self, request):
         if request.method == 'GET':
             serializer = self.get_serializer(request.user, many=False)
