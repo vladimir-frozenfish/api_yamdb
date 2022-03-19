@@ -28,18 +28,19 @@ class User(AbstractUser):
         ('moderator', 'moderator'),
         ('admin', 'admin')
     )
-
-    role = models.CharField(max_length=16, choices=role_user, default='user')
+    role = models.CharField(max_length=16, 
+                            choices=role_user, default='user')
     bio = models.TextField(
         'Биография',
         blank=True,
     )
-    
+    email = models.EmailField( max_length=254,
+                               unique=True, blank=False, null=False)
+        
     confirmation_code = models.CharField(
         max_length=50,
         blank=True,       
     )
-     
 
     @property
     def is_admin(self):
@@ -50,7 +51,6 @@ class User(AbstractUser):
     def is_moderator(self):
         return (self.role == 'moderator' or self.is_superuser)
     
-    
     def save(self, *args, **kwargs):
         if self.confirmation_code == '':
             self.confirmation_code = uuid.uuid3(uuid.NAMESPACE_DNS, self.email)
@@ -58,6 +58,9 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+    
+    class Meta:
+        ordering = ['id']
 
 
 class Category(models.Model):

@@ -1,27 +1,21 @@
+from smtplib import SMTPException
+
 from api_yamdb.settings import SERVICE_EMAIL
+from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from django.contrib.auth import authenticate
-
-from rest_framework.response import Response
-from rest_framework import viewsets, mixins, filters, permissions, status
-from rest_framework.decorators import api_view, action, permission_classes
-from rest_framework_simplejwt.tokens import AccessToken
-
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, mixins, permissions, status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import AccessToken
+from reviews.models import Category, Genre, Review, Title, User
 
-from reviews.models import Review, Title, Category, Genre, User
-from .permissions import AdminOrReadOnly, IsAuthorOrReadOnly
-from .serializers import (
-    CommentSerializer,
-    ReviewSerializer,
-    CategorySerializer,
-    GenreSerializer,
-    TitleSerializer,
-)
-
-
-from .serializers import CommentSerializer, ReviewSerializer, UserSerializer
+from .permissions import (IsAdmin, IsAdminOrReadOnly, IsAuthorOrReadOnly,
+                          IsSuperuser)
+from .serializers import (CategorySerializer, CommentSerializer,
+                          GenreSerializer, ReviewSerializer, TitleSerializer,
+                          UserSerializer)
 
 
 @api_view(['POST'])
@@ -35,14 +29,17 @@ def send_register_code(request):
     serializer.is_valid(raise_exception=True)
     serializer.save()
     confirmation_code = User.objects.get(username=username).confirmation_code
-    send_mail(
-        'Служба технического сопровождения YAMDB services',
-        f'Привет! Держи свой код доступа {confirmation_code}.',
-        SERVICE_EMAIL,
-        [email],
-        fail_silently=False
-
-    )
+    try:
+        send_mail(
+            'Служба технического сопровождения YAMDB services',
+             f'Привет! Держи свой код доступа {confirmation_code}.',
+            SERVICE_EMAIL,
+            [email],
+            fail_silently=False
+        )
+    except SMTPException:
+        return Response('Ошибка отправки email',
+                        status=status.HTTP_400_BAD_REQUEST)
     return Response(data, status=status.HTTP_200_OK)
 
 
@@ -58,12 +55,11 @@ def get_token(request):
         response = {'confirmation_code': 'Invalid confirmation code'}
         return Response(response, status=status.HTTP_400_BAD_REQUEST)
     token = AccessToken.for_user(user)
-
-    return Response({'access': str(token)}, status=status.HTTP_200_OK)
+    return Response({'token': str(token)}, status=status.HTTP_200_OK)
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    permission_classes = (AdminOrReadOnly,)  ### Указать правильный пермишен
+    permission_classes = (IsSuperuser | IsAdmin, permissions.IsAuthenticated,)
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
@@ -71,7 +67,7 @@ class UserViewSet(viewsets.ModelViewSet):
     search_fields = ('username',)
 
     @action(methods=['GET', 'PATCH'], url_path='me',
-            permission_classes=(permissions.IsAuthenticated,),  ### Указать правильный пермишен
+            permission_classes=(permissions.IsAuthenticated,), 
             detail=False)
     def get_patch_mixin(self, request):
         if request.method == 'GET':
@@ -97,7 +93,7 @@ class ListCreateDeleteViewSet(
 class CategoryViewSet(ListCreateDeleteViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (AdminOrReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = [filters.SearchFilter]
     search_fields = ("name",)
 
@@ -105,7 +101,7 @@ class CategoryViewSet(ListCreateDeleteViewSet):
 class GenreViewSet(ListCreateDeleteViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (AdminOrReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = [filters.SearchFilter]
     search_fields = ("name",)
 
@@ -113,7 +109,7 @@ class GenreViewSet(ListCreateDeleteViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    permission_classes = (AdminOrReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ("category__slug", "genre__slug", "name", "year")
 
