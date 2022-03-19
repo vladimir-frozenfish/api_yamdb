@@ -1,6 +1,7 @@
+import uuid
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
 
 score = (
     (1, 1),
@@ -33,6 +34,12 @@ class User(AbstractUser):
         'Биография',
         blank=True,
     )
+    
+    confirmation_code = models.CharField(
+        max_length=50,
+        blank=True,       
+    )
+     
 
     @property
     def is_admin(self):
@@ -42,6 +49,12 @@ class User(AbstractUser):
     @property
     def is_moderator(self):
         return (self.role == 'moderator' or self.is_superuser)
+    
+    
+    def save(self, *args, **kwargs):
+        if self.confirmation_code == '':
+            self.confirmation_code = uuid.uuid3(uuid.NAMESPACE_DNS, self.email)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.username

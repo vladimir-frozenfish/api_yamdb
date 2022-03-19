@@ -1,3 +1,5 @@
+from api_yamdb.settings import SERVICE_EMAIL
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
 
@@ -19,25 +21,66 @@ from .serializers import (
 )
 
 
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def get_token(request):
-    """функция получения токена,
-    в качестве confirmation_code - используется password"""
+from .serializers import CommentSerializer, ReviewSerializer, UserSerializer
 
+
+@api_view(['POST'])
+def send_register_code(request):
+    username = request.data.get('username')
+    email = request.data.get('email')
+    data = {'username': username,
+            'email': email}
+    serializer = UserSerializer(data=data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    confirmation_code = User.objects.get(username=username).confirmation_code
+    send_mail(
+        'Служба технического сопровождения YAMDB services',
+        f'Привет! Держи свой код доступа {confirmation_code}.',
+        SERVICE_EMAIL,
+        [email],
+        fail_silently=False
+
+    )
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def get_token(request):
     username = request.data.get('username')
     if username is None:
-        return Response({'Сообщение': 'Заполните поля'}, status=status.HTTP_400_BAD_REQUEST)
-
+        return Response({'username': 'Invalid username'},
+                        status=status.HTTP_400_BAD_REQUEST)
     user = get_object_or_404(User, username=username)
-    password = request.data['confirmation_code']
-    user = authenticate(username=user, password=password)
+    if user.confirmation_code != request.data.get('confirmation_code'):
+        response = {'confirmation_code': 'Invalid confirmation code'}
+        return Response(response, status=status.HTTP_400_BAD_REQUEST)
+    token = AccessToken.for_user(user)
 
-    if user:
-        token = AccessToken.for_user(user)
-        return Response({'access': str(token)}, status=status.HTTP_200_OK)
+    return Response({f'token: {token}'}, status=status.HTTP_200_OK)
 
-    return Response({'Сообщение': 'Неправильный confirmation_code'}, status=status.HTTP_400_BAD_REQUEST)
+
+class UserViewSet(viewsets.ModelViewSet):
+    permission_classes = (AdminPermission,)  ### Указать правильный пермишен
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    lookup_field = 'username'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
+
+    @action(methods=['GET', 'PATCH'], url_path='me',
+            permission_classes=(permissions.IsAuthenticated,),  ### Указать правильный пермишен
+            detail=False, url_path='me')
+    def get_patch_mixin(self, request):
+        if request.method == 'GET':
+            serializer = self.get_serializer(request.user, many=False)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(
+            instance=request.user,
+            data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(role=request.user.role)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ListCreateDeleteViewSet(
@@ -105,7 +148,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         review_id = self.kwargs.get("review_id")
