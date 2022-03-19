@@ -11,6 +11,12 @@ class UserAdmin(admin.ModelAdmin):
 class UserAdmin(BaseUserAdmin):
     list_display = ('username', 'role', 'email', 'first_name', 'last_name', 'bio')
 
+    add_fieldsets = (
+        (None, {
+            'fields': ('username', 'password', 'email', 'role'),
+        }),
+    )
+
 
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug')

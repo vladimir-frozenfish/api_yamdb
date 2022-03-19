@@ -49,13 +49,26 @@ class TitleSerializer(serializers.ModelSerializer):
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username',
-        # default=serializers.CurrentUserDefault()
     )
 
     class Meta:
         fields = '__all__'
         read_only_fields = ('title',)
         model = Review
+
+    def validate(self, data):
+        """осуществляется проверка, оставлял ли автор уже на
+        данное произведение отзыв или нет. Если оставлял - выдается ошибка"""
+        title = self.initial_data.get('title')
+        author = self.initial_data.get('author')
+
+        if Review.objects.filter(title=title, author=author).exists():
+            raise serializers.ValidationError({
+                'message': 'Автор уже оставлял отзыв на это призведение!'
+            })
+
+        return data
+
 
 
 class CommentSerializer(serializers.ModelSerializer):
