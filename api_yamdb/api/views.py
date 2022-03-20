@@ -1,7 +1,8 @@
+import uuid
 from smtplib import SMTPException
 
 from api_yamdb.settings import SERVICE_EMAIL
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -25,14 +26,22 @@ def send_register_code(request):
     email = request.data.get('email')
     data = {'username': username,
             'email': email}
-    serializer = UserSerializer(data=data)
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    confirmation_code = User.objects.get(username=username).confirmation_code
+    user_obj = User.objects.filter(
+            username=username,
+            email=email,
+        ).first()
+    if user_obj is None:
+        serializer = UserSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+    else:
+        code = uuid.uuid3(uuid.NAMESPACE_DNS, email)
+        User.objects.update(confirmation_code=code)
+    confirmation_code = User.objects.get(username=username).confirmation_code    
     try:
         send_mail(
             'Служба технического сопровождения YAMDB services',
-             f'Привет! Держи свой код доступа {confirmation_code}.',
+             f'Привет! Держи свой код доступа {str(confirmation_code)}.',
             SERVICE_EMAIL,
             [email],
             fail_silently=False

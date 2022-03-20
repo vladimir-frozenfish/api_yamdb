@@ -34,7 +34,7 @@ class User(AbstractUser):
         'Биография',
         blank=True,
     )
-    email = models.EmailField( max_length=254,
+    email = models.EmailField(max_length=254,
                                unique=True, blank=False, null=False)
         
     confirmation_code = models.CharField(
