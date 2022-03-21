@@ -1,17 +1,20 @@
 import uuid
 from smtplib import SMTPException
-
-from api_yamdb.settings import SERVICE_EMAIL
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend, FilterSet, CharFilter, NumberFilter
+from django_filters.rest_framework import (
+    CharFilter,
+    DjangoFilterBackend,
+    FilterSet,
+    NumberFilter,
+)
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework.pagination import PageNumberPagination
-
 from reviews.models import Category, Genre, Review, Title, User
+
+from api_yamdb.settings import SERVICE_EMAIL
 from .permissions import (
     IsAdmin,
     IsAdminOrReadOnly,
@@ -23,8 +26,8 @@ from .serializers import (
     CommentSerializer,
     GenreSerializer,
     ReviewSerializer,
-    TitleReadSerializer,
-    TitleWriteSerializer,
+    TitleGetSerializer,
+    TitleSerializer,
     UserSerializer,
 )
 
@@ -80,14 +83,11 @@ def get_token(request):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    permission_classes = (
-        IsSuperuser | IsAdmin,
-        permissions.IsAuthenticated,
-    )
+    permission_classes = [IsSuperuser | IsAdmin, permissions.IsAuthenticated]
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = "username"
-    filter_backends = (filters.SearchFilter,)
+    filter_backends = [filters.SearchFilter]
     search_fields = ("username",)
 
     @action(
@@ -118,18 +118,18 @@ class ListCreateDeleteViewSet(
 
 
 class CategoryViewSet(ListCreateDeleteViewSet):
-    queryset = Category.objects.all().order_by('id')
+    queryset = Category.objects.all().order_by("id")
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ("name",)
     lookup_field = "slug"
 
 
 class GenreViewSet(ListCreateDeleteViewSet):
-    queryset = Genre.objects.all().order_by('id')
+    queryset = Genre.objects.all().order_by("id")
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ("name",)
     lookup_field = "slug"
@@ -140,23 +140,22 @@ class TitleFilter(FilterSet):
     genre = CharFilter(field_name="genre__slug")
     name = CharFilter(field_name="name", lookup_expr="icontains")
     year = NumberFilter(field_name="year")
-    
+
     class Meta:
         model = Title
         fields = ["category", "genre", "name", "year"]
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all().order_by('id')
-    permission_classes = (IsAdminOrReadOnly,)
-    pagination_class = PageNumberPagination
+    queryset = Title.objects.all().order_by("id")
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.request.method == "GET":
-            return TitleReadSerializer
-        return TitleWriteSerializer
+            return TitleGetSerializer
+        return TitleSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -169,7 +168,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         title_id = self.kwargs.get("title_id")
         title = get_object_or_404(Title, id=title_id)
-        new_queryset = title.reviews.all().order_by('id')
+        new_queryset = title.reviews.all().order_by("id")
         return new_queryset
 
     def create(self, request, *args, **kwargs):
@@ -181,8 +180,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
         data = {
             "author": user,
             "title": title,
-            "text": request.data.get('text'),
-            "score": request.data.get('score')
+            "text": request.data.get("text"),
+            "score": request.data.get("score"),
         }
 
         serializer = ReviewSerializer(data=data)
@@ -202,12 +201,10 @@ class CommentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         review_id = self.kwargs.get("review_id")
         review = get_object_or_404(Review, id=review_id)
-        new_queryset = review.comments.all().order_by('id')
+        new_queryset = review.comments.all().order_by("id")
         return new_queryset
 
     def perform_create(self, serializer):
         review_id = self.kwargs.get("review_id")
         review = get_object_or_404(Review, id=review_id)
         serializer.save(author=self.request.user, review=review)
-
-

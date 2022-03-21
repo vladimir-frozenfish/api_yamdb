@@ -1,11 +1,9 @@
-import re
 import datetime as dt
-
+import re
 from django.db.models import Avg
-
 from rest_framework import serializers
 
-from reviews.models import Comment, Review, Category, Genre, Title, User
+from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -48,7 +46,7 @@ class GenreSerializer(serializers.ModelSerializer):
         lookup_field = "slug"
 
 
-class TitleReadSerializer(serializers.ModelSerializer):
+class TitleGetSerializer(serializers.ModelSerializer):
     rating = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(read_only=True, many=True)
@@ -71,7 +69,7 @@ class TitleReadSerializer(serializers.ModelSerializer):
         return None
 
 
-class TitleWriteSerializer(serializers.ModelSerializer):
+class TitleSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(), slug_field="slug"
     )
@@ -103,14 +101,11 @@ class ReviewSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        # fields = '__all__'
         fields = ("id", "author", "text", "score", "pub_date")
         read_only_fields = ("title",)
         model = Review
 
     def validate(self, data):
-        """осуществляется проверка, оставлял ли автор уже на
-        данное произведение отзыв или нет. Если оставлял - выдается ошибка"""
         title = self.initial_data.get("title")
         author = self.initial_data.get("author")
 
