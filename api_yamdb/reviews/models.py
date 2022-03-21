@@ -47,7 +47,8 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         if self.confirmation_code == "":
-            self.confirmation_code = uuid.uuid3(uuid.NAMESPACE_DNS, self.email)
+            self.confirmation_code = uuid.uuid3(uuid.NAMESPACE_DNS,
+                                                self.email)
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -139,7 +140,7 @@ class Review(models.Model):
 
         constraints = [
             models.UniqueConstraint(
-                fields=["author", "title"], name="unique_user_following"
+                fields=["author", "title"], name="unique_user_review"
             )
         ]
 
