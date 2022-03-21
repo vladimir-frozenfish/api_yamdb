@@ -176,8 +176,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
         data = {
             "author": user,
             "title": title,
+            "text": request.data.get('text'),
+            "score": request.data.get('score')
         }
-        data.update(request.data)
 
         serializer = ReviewSerializer(data=data)
 
