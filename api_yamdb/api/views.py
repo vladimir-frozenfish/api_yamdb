@@ -4,7 +4,7 @@ from smtplib import SMTPException
 from api_yamdb.settings import SERVICE_EMAIL
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend, FilterSet
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet, CharFilter, NumberFilter
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
@@ -136,9 +136,14 @@ class GenreViewSet(ListCreateDeleteViewSet):
 
 
 class TitleFilter(FilterSet):
+    category = CharFilter(field_name="category__slug")
+    genre = CharFilter(field_name="genre__slug")
+    name = CharFilter(field_name="name", lookup_expr="icontains")
+    year = NumberFilter(field_name="year")
+    
     class Meta:
         model = Title
-        fields = ["category__slug", "genre__slug", "name", "year"]
+        fields = ["category", "genre", "name", "year"]
 
 
 class TitleViewSet(viewsets.ModelViewSet):
