@@ -181,8 +181,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
         data = {
             "author": user,
             "title": title,
+            "text": request.data.get('text'),
+            "score": request.data.get('score')
         }
-        data.update(request.data)
 
         serializer = ReviewSerializer(data=data)
 
@@ -193,9 +194,20 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
+    permission_classes = [
+        permissions.IsAuthenticatedOrReadOnly,
+        IsAuthorOrReadOnly,
+    ]
 
     def get_queryset(self):
         review_id = self.kwargs.get("review_id")
         review = get_object_or_404(Review, id=review_id)
         new_queryset = review.comments.all()
         return new_queryset
+
+    def perform_create(self, serializer):
+        review_id = self.kwargs.get("review_id")
+        review = get_object_or_404(Review, id=review_id)
+        serializer.save(author=self.request.user, review=review)
+
+
