@@ -2,7 +2,6 @@ import uuid
 from smtplib import SMTPException
 
 from api_yamdb.settings import SERVICE_EMAIL
-from django.contrib.auth import authenticate, get_user_model
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
