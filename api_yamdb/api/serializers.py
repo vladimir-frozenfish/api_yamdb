@@ -1,4 +1,3 @@
-from email.policy import default
 import re
 import datetime as dt
 
@@ -26,7 +25,7 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Вы не указали username")
         elif not re.search(r"^\w+$", value):
             raise serializers.ValidationError(
-                "Username должен состоять из букв, цифр и символа подчеркивания"
+                "Username должен состоять из букв, цифр и символа '_'"
             )
         elif value == "me":
             raise serializers.ValidationError(
@@ -104,14 +103,9 @@ class ReviewSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-<<<<<<< HEAD
-        fields = "__all__"
-        read_only_fields = ("title",)
-=======
         # fields = '__all__'
-        fields = ('id', 'author', 'text', 'score', 'pub_date')
-        read_only_fields = ('title',)
->>>>>>> 956e2838b2f7839b039da320dc9ce0532c6b6960
+        fields = ("id", "author", "text", "score", "pub_date")
+        read_only_fields = ("title",)
         model = Review
 
     def validate(self, data):
