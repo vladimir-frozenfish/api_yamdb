@@ -1,3 +1,4 @@
+from email.policy import default
 import re
 import datetime as dt
 
@@ -9,19 +10,28 @@ from reviews.models import Comment, Review, Category, Genre, Title, User
 
 
 class UserSerializer(serializers.ModelSerializer):
-
     class Meta:
         fields = (
-            'bio', 'email', 'first_name', 'last_name', 'role', 'username')
+            "bio",
+            "email",
+            "first_name",
+            "last_name",
+            "role",
+            "username",
+        )
         model = User
 
     def validate_username(self, value):
         if value is None:
-            raise serializers.ValidationError('Вы не указали username')
-        elif not re.search(r'^\w+$', value):
-            raise serializers.ValidationError('Username должен состоять из букв, цифр и символа подчеркивания')
-        elif value == 'me':
-            raise serializers.ValidationError('Пользователь "me" запрещен. Имя зарезервировано.')
+            raise serializers.ValidationError("Вы не указали username")
+        elif not re.search(r"^\w+$", value):
+            raise serializers.ValidationError(
+                "Username должен состоять из букв, цифр и символа подчеркивания"
+            )
+        elif value == "me":
+            raise serializers.ValidationError(
+                'Пользователь "me" запрещен. Имя зарезервировано.'
+            )
         return value
 
 
@@ -39,8 +49,10 @@ class GenreSerializer(serializers.ModelSerializer):
         lookup_field = "slug"
 
 
-class TitleSerializer(serializers.ModelSerializer):
+class TitleReadSerializer(serializers.ModelSerializer):
     rating = serializers.SerializerMethodField()
+    category = CategorySerializer(read_only=True)
+    genre = GenreSerializer(read_only=True, many=True)
 
     class Meta:
         model = Title
@@ -55,7 +67,29 @@ class TitleSerializer(serializers.ModelSerializer):
         )
 
     def get_rating(self, obj):
-        return obj.reviews.aggregate(rating=Avg("score"))
+        if obj.reviews:
+            return obj.reviews.all().aggregate(Avg("score"))["score__avg"]
+        return None
+
+
+class TitleWriteSerializer(serializers.ModelSerializer):
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(), slug_field="slug"
+    )
+    genre = serializers.SlugRelatedField(
+        queryset=Genre.objects.all(), many=True, slug_field="slug"
+    )
+
+    class Meta:
+        model = Title
+        fields = (
+            "id",
+            "name",
+            "year",
+            "description",
+            "category",
+            "genre",
+        )
 
     def validate_year(self, value):
         year = dt.date.today().year
@@ -66,33 +100,33 @@ class TitleSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
+        read_only=True, slug_field="username"
     )
 
     class Meta:
-        fields = '__all__'
-        read_only_fields = ('title',)
+        fields = "__all__"
+        read_only_fields = ("title",)
         model = Review
 
     def validate(self, data):
         """осуществляется проверка, оставлял ли автор уже на
         данное произведение отзыв или нет. Если оставлял - выдается ошибка"""
-        title = self.initial_data.get('title')
-        author = self.initial_data.get('author')
+        title = self.initial_data.get("title")
+        author = self.initial_data.get("author")
 
         if Review.objects.filter(title=title, author=author).exists():
-            raise serializers.ValidationError({
-                'message': 'Автор уже оставлял отзыв на это призведение!'
-            })
+            raise serializers.ValidationError(
+                {"message": "Автор уже оставлял отзыв на это призведение!"}
+            )
 
         return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
+        read_only=True, slug_field="username"
     )
 
     class Meta:
-        fields = ('id', 'text', 'author', 'pub_date')
+        fields = ("id", "text", "author", "pub_date")
         model = Comment
