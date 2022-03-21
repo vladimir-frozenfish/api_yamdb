@@ -104,8 +104,14 @@ class ReviewSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
+<<<<<<< HEAD
         fields = "__all__"
         read_only_fields = ("title",)
+=======
+        # fields = '__all__'
+        fields = ('id', 'author', 'text', 'score', 'pub_date')
+        read_only_fields = ('title',)
+>>>>>>> 956e2838b2f7839b039da320dc9ce0532c6b6960
         model = Review
 
     def validate(self, data):
