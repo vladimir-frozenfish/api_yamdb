@@ -44,9 +44,8 @@ python3 manage.py migrate
 ```
 python3 manage.py runserver
 ```
-
 ____
-#### Как импортировать данные из прилагаемых .csv файлов (api_yamdb\static\data\) в database проекта:
+### Как импортировать данные из прилагаемых .csv файлов (api_yamdb\static\data\) в database проекта:
 
 Скачать программу sqlite3.exe и поместить ее в корневую папку проекта api_yamdb:
 
