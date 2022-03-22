@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
 from api_yamdb.settings import SERVICE_EMAIL
-from .filter import TitleFilter
+from .filters import TitleFilter
 from reviews.models import Category, Genre, Review, Title, User
 from .permissions import (
     IsAdmin,
