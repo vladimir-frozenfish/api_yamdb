@@ -1,42 +1,34 @@
 import uuid
 from smtplib import SMTPException
 
+from api_yamdb.settings import SERVICE_EMAIL
 from django.core.mail import send_mail
-from django.shortcuts import get_object_or_404
 from django.db.models import Avg
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
-
-from api_yamdb.settings import SERVICE_EMAIL
-from .filters import TitleFilter
 from reviews.models import Category, Genre, Review, Title, User
-from .permissions import (
-    IsAdmin,
-    IsAdminOrReadOnly,
-    IsAuthorOrReadOnly,
-    IsSuperuser,
-)
-from .serializers import (
-    CategorySerializer,
-    CommentSerializer,
-    GenreSerializer,
-    ReviewSerializer,
-    TitleGetSerializer,
-    TitleSerializer,
-    UserSerializer,
-)
+
+from .filters import TitleFilter
+from .permissions import (IsAdmin, IsAdminOrReadOnly, IsAuthorOrReadOnly,
+                          IsSuperuser)
+from .serializers import (CategorySerializer, CommentSerializer,
+                          ConfirmationCodeSerializer, GenreSerializer,
+                          ReviewSerializer, SendCodeSerializer,
+                          TitleGetSerializer, TitleSerializer, UserSerializer)
 
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def send_register_code(request):
-    username = request.data.get("username")
-    email = request.data.get("email")
+    serializer = SendCodeSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    username = serializer.validated_data['username']
+    email = serializer.validated_data['email']
     data = {"username": username, "email": email}
     user_obj = User.objects.filter(
         username=username,
@@ -68,14 +60,17 @@ def send_register_code(request):
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def get_token(request):
-    username = request.data.get("username")
+    serializer = ConfirmationCodeSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    username = serializer.validated_data['username']
+    confirmation_code = serializer.validated_data['confirmation_code']
     if username is None:
         return Response(
             {"username": "Invalid username"},
             status=status.HTTP_400_BAD_REQUEST,
         )
     user = get_object_or_404(User, username=username)
-    if user.confirmation_code != request.data.get("confirmation_code"):
+    if user.confirmation_code != confirmation_code:
         response = {"confirmation_code": "Invalid confirmation code"}
         return Response(response, status=status.HTTP_400_BAD_REQUEST)
     token = AccessToken.for_user(user)
@@ -131,7 +126,8 @@ class GenreViewSet(ListCreateDeleteViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.annotate(rating=Avg("reviews__score")).order_by("id")
+    queryset = Title.objects.annotate(
+        rating=Avg("reviews__score")).order_by("id")
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter

@@ -1,4 +1,5 @@
 import uuid
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -18,33 +19,42 @@ score = (
 )
 
 
+class UserRoles:
+    ADMIN = 'admin'
+    MODERATOR = 'moderator'
+    USER = 'user'
+
+
 class User(AbstractUser):
     role_user = (
         ("user", "user"),
         ("moderator", "moderator"),
         ("admin", "admin"),
     )
-    role = models.CharField(max_length=16, choices=role_user, default="user")
-    bio = models.TextField(
-        "Биография",
-        blank=True,
-    )
-    email = models.EmailField(
-        max_length=254, unique=True, blank=False, null=False
-    )
-
-    confirmation_code = models.CharField(
-        max_length=50,
-        blank=True,
-    )
+    username = models.CharField(max_length=150,
+                                unique=True,
+                                blank=False, null=False)
+    role = models.CharField(max_length=16,
+                            choices=role_user, default="user")
+    bio = models.TextField(blank=True,
+                           null=True)
+    first_name = models.CharField(max_length=150,
+                                  blank=True, null=True)
+    last_name = models.CharField(max_length=150,
+                                 blank=True, null=True)
+    email = models.EmailField(max_length=254, unique=True,
+                              blank=False, null=False)
+    confirmation_code = models.CharField(max_length=50,
+                                         blank=True)
 
     @property
     def is_admin(self):
-        return self.is_staff or self.role == "admin" or self.is_superuser
+        return (self.is_staff or self.role == UserRoles.ADMIN
+                or self.is_superuser)
 
     @property
     def is_moderator(self):
-        return self.role == "moderator" or self.is_superuser
+        return self.role == UserRoles.MODERATOR or self.is_superuser
 
     def save(self, *args, **kwargs):
         if self.confirmation_code == "":
@@ -89,7 +99,8 @@ class Genre(models.Model):
 
 class Title(models.Model):
     name = models.CharField(max_length=256, verbose_name="Имя_произведения")
-    year = models.IntegerField(validators=[validate_year], verbose_name="Год_создания_произведения")
+    year = models.IntegerField(validators=[validate_year],
+                               verbose_name="Год_создания_произведения")
     description = models.TextField(verbose_name="Описание_произведения")
     category = models.ForeignKey(
         Category,
