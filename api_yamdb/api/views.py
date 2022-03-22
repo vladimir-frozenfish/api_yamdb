@@ -12,13 +12,12 @@ from django_filters.rest_framework import (
 
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
 from api_yamdb.settings import SERVICE_EMAIL
-
 from reviews.models import Category, Genre, Review, Title, User
-
 from .permissions import (
     IsAdmin,
     IsAdminOrReadOnly,
@@ -175,24 +174,18 @@ class ReviewViewSet(viewsets.ModelViewSet):
         new_queryset = title.reviews.all().order_by("id")
         return new_queryset
 
-    def create(self, request, *args, **kwargs):
+    def perform_create(self, serializer):
         user = self.request.user
 
         title_id = self.kwargs.get("title_id")
         title = get_object_or_404(Title, id=title_id)
 
-        data = {
-            "author": user,
-            "title": title,
-            "text": request.data.get("text"),
-            "score": request.data.get("score"),
-        }
+        if Review.objects.filter(title=title, author=user).exists():
+            raise ValidationError(
+                {"message": "Автор уже оставлял отзыв на это призведение!"}
+            )
 
-        serializer = ReviewSerializer(data=data)
-
-        if serializer.is_valid(raise_exception=True):
-            serializer.save(author=user, title=title)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        serializer.save(author=user, title=title)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -204,11 +197,13 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         review_id = self.kwargs.get("review_id")
-        review = get_object_or_404(Review, id=review_id)
+        title_id = self.kwargs.get("title_id")
+        review = get_object_or_404(Review, id=review_id, title=title_id)
         new_queryset = review.comments.all().order_by("id")
         return new_queryset
 
     def perform_create(self, serializer):
         review_id = self.kwargs.get("review_id")
-        review = get_object_or_404(Review, id=review_id)
+        title_id = self.kwargs.get("title_id")
+        review = get_object_or_404(Review, id=review_id, title=title_id)
         serializer.save(author=self.request.user, review=review)

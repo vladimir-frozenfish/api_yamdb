@@ -2,7 +2,6 @@ import datetime as dt
 import re
 
 from django.db.models import Avg
-
 from rest_framework import serializers
 
 from reviews.models import Category, Comment, Genre, Review, Title, User
@@ -23,11 +22,11 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         if value is None:
             raise serializers.ValidationError("Вы не указали username")
-        elif not re.search(r"^\w+$", value):
+        if not re.search(r"^\w+$", value):
             raise serializers.ValidationError(
                 "Username должен состоять из букв, цифр и символа '_'"
             )
-        elif value == "me":
+        if value == "me":
             raise serializers.ValidationError(
                 'Пользователь "me" запрещен. Имя зарезервировано.'
             )
@@ -106,17 +105,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ("id", "author", "text", "score", "pub_date")
         read_only_fields = ("title",)
         model = Review
-
-    def validate(self, data):
-        title = self.initial_data.get("title")
-        author = self.initial_data.get("author")
-
-        if Review.objects.filter(title=title, author=author).exists():
-            raise serializers.ValidationError(
-                {"message": "Автор уже оставлял отзыв на это призведение!"}
-            )
-
-        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
