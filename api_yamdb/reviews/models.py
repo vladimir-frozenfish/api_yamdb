@@ -1,7 +1,8 @@
 import uuid
-
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
+from .validators import validate_year
 
 score = (
     (1, 1),
@@ -88,7 +89,7 @@ class Genre(models.Model):
 
 class Title(models.Model):
     name = models.CharField(max_length=256, verbose_name="Имя_произведения")
-    year = models.IntegerField(verbose_name="Год_создания_произведения")
+    year = models.IntegerField(validators=[validate_year], verbose_name="Год_создания_произведения")
     description = models.TextField(verbose_name="Описание_произведения")
     category = models.ForeignKey(
         Category,

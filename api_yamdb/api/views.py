@@ -3,12 +3,8 @@ from smtplib import SMTPException
 
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import (
-    CharFilter,
-    DjangoFilterBackend,
-    FilterSet,
-    NumberFilter,
-)
+from django.db.models import Avg
+from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
@@ -17,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
 from api_yamdb.settings import SERVICE_EMAIL
+from .filter import TitleFilter
 from reviews.models import Category, Genre, Review, Title, User
 from .permissions import (
     IsAdmin,
@@ -117,40 +114,24 @@ class ListCreateDeleteViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    pass
+    permission_classes = [IsAdminOrReadOnly]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ("name",)
+    lookup_field = "slug"
 
 
 class CategoryViewSet(ListCreateDeleteViewSet):
     queryset = Category.objects.all().order_by("id")
     serializer_class = CategorySerializer
-    permission_classes = [IsAdminOrReadOnly]
-    filter_backends = [filters.SearchFilter]
-    search_fields = ("name",)
-    lookup_field = "slug"
 
 
 class GenreViewSet(ListCreateDeleteViewSet):
     queryset = Genre.objects.all().order_by("id")
     serializer_class = GenreSerializer
-    permission_classes = [IsAdminOrReadOnly]
-    filter_backends = [filters.SearchFilter]
-    search_fields = ("name",)
-    lookup_field = "slug"
-
-
-class TitleFilter(FilterSet):
-    category = CharFilter(field_name="category__slug")
-    genre = CharFilter(field_name="genre__slug")
-    name = CharFilter(field_name="name", lookup_expr="icontains")
-    year = NumberFilter(field_name="year")
-
-    class Meta:
-        model = Title
-        fields = ["category", "genre", "name", "year"]
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all().order_by("id")
+    queryset = Title.objects.annotate(rating=Avg("reviews__score")).order_by("id")
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter
