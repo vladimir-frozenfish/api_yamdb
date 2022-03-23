@@ -1,7 +1,9 @@
 import datetime as dt
 import re
 
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
+from rest_framework.decorators import action
 from rest_framework.validators import UniqueTogetherValidator
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
@@ -34,25 +36,13 @@ class UserSerializer(serializers.ModelSerializer):
 
 class SendCodeSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True, max_length=150)
-    username = serializers.CharField(required=True,)
+    username = serializers.CharField(required=True, max_length=150)
 
     class Meta:
         model = User
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role',
         )
-        validators = [
-            UniqueTogetherValidator(
-                queryset=User.objects.all(),
-                fields=('email',),
-                message='Почтовый адресс уже используется'
-            ),
-            UniqueTogetherValidator(
-                queryset=User.objects.all(),
-                fields=('username',),
-                message='Имя пользователя уже используется'
-            )
-        ]
 
 
 class ConfirmationCodeSerializer(serializers.Serializer):
@@ -127,6 +117,19 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ("id", "author", "text", "score", "pub_date")
         read_only_fields = ("title",)
         model = Review
+
+    def validate(self, data):
+        user = self.context['request'].user
+        title_id = self.context['view'].kwargs.get(['title_id'][0])
+        title = get_object_or_404(Title, id=title_id)
+
+        if (self.context['request'].method == 'POST'
+                and Review.objects.filter(title=title, author=user).exists()):
+            raise serializers.ValidationError(
+                {"message": "Автор уже оставлял отзыв на это произведение!"}
+            )
+
+        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):

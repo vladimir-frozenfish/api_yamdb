@@ -5,7 +5,7 @@ from django.db import models
 
 from .validators import validate_year
 
-score = (
+SCORE = (
     (1, 1),
     (2, 2),
     (3, 3),
@@ -42,8 +42,7 @@ class User(AbstractUser):
                                   blank=True, null=True)
     last_name = models.CharField(max_length=150,
                                  blank=True, null=True)
-    email = models.EmailField(max_length=254, unique=True,
-                              blank=False, null=False)
+    email = models.EmailField(max_length=254, unique=True)
     confirmation_code = models.CharField(max_length=50,
                                          blank=True)
 
@@ -141,7 +140,7 @@ class Review(models.Model):
         Title, on_delete=models.CASCADE, related_name="reviews"
     )
     text = models.TextField()
-    score = models.IntegerField(choices=score)
+    score = models.IntegerField(choices=SCORE)
     pub_date = models.DateTimeField(
         "Дата добавления", auto_now_add=True, db_index=True
     )
