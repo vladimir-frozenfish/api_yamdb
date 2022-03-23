@@ -66,11 +66,10 @@ def get_token(request):
     serializer.is_valid(raise_exception=True)
     username = serializer.validated_data['username']
     confirmation_code = serializer.validated_data['confirmation_code']
-    if username is None:
-        return Response(
-            {"username": "Неправльное имя пользовтеля"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+
+    if not username:
+        raise ValidationError({"username": "Неправльное имя пользовтеля"})
+
     user = get_object_or_404(User, username=username)
 
     if not default_token_generator.check_token(user, confirmation_code):
