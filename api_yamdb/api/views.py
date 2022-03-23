@@ -2,8 +2,10 @@ import uuid
 from smtplib import SMTPException
 
 from api_yamdb.settings import SERVICE_EMAIL
+from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
+from django.forms import ValidationError
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, permissions, status, viewsets
@@ -64,15 +66,12 @@ def get_token(request):
     serializer.is_valid(raise_exception=True)
     username = serializer.validated_data['username']
     confirmation_code = serializer.validated_data['confirmation_code']
-    if username is None:
-        return Response(
-            {"username": "Invalid username"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    if not username:
+        raise ValidationError({"encoded_user_id": "Invalid user"})
     user = get_object_or_404(User, username=username)
-    if user.confirmation_code != confirmation_code:
-        response = {"confirmation_code": "Invalid confirmation code"}
-        return Response(response, status=status.HTTP_400_BAD_REQUEST)
+    if not default_token_generator.check_token(user,
+                                               confirmation_code):
+        raise ValidationError({"token": "Invalid token"})
     token = AccessToken.for_user(user)
     return Response({"token": str(token)}, status=status.HTTP_200_OK)
 
