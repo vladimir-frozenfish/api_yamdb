@@ -1,6 +1,7 @@
 import uuid
 from smtplib import SMTPException
 
+from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
@@ -71,9 +72,12 @@ def get_token(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
     user = get_object_or_404(User, username=username)
-    if user.confirmation_code != confirmation_code:
-        response = {"confirmation_code": "Неправльный код подтверждения"}
-        return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+    if not default_token_generator.check_token(user, confirmation_code):
+        raise ValidationError(
+            {"confirmation_code": "Неправильный код подтверждения"}
+        )
+
     token = AccessToken.for_user(user)
     return Response({"token": str(token)}, status=status.HTTP_200_OK)
 
