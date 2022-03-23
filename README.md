@@ -62,7 +62,7 @@ https://www.sqlite.org/download.html
 https://marketplace.visualstudio.com/items?itemName=janisdd.vscode-edit-csv
 ```
 
-В терминале bash сделать прилагаемый скрипт db_import_script.sh испоняемым следующей командой:
+В терминале bash сделать прилагаемый скрипт db_import_script.sh исполняемым следующей командой:
 
 ```
 chmod +x ./db_import_script.sh
