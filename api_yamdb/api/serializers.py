@@ -32,6 +32,34 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
 
+class SendCodeSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True, max_length=150)
+    username = serializers.CharField(required=True,)
+
+    class Meta:
+        model = User
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role',
+        )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=User.objects.all(),
+                fields=('email',),
+                message='Почтовый адресс уже используется'
+            ),
+            UniqueTogetherValidator(
+                queryset=User.objects.all(),
+                fields=('username',),
+                message='Имя пользователя уже используется'
+            )
+        ]
+
+
+class ConfirmationCodeSerializer(serializers.Serializer):
+    confirmation_code = serializers.CharField(required=True)
+    username = serializers.CharField(required=True, max_length=150)
+
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -109,31 +137,3 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ("id", "text", "author", "pub_date")
         model = Comment
-
-
-class SendCodeSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True, max_length=150)
-    username = serializers.CharField(required=True,)
-
-    class Meta:
-        model = User
-        fields = (
-            'username', 'email', 'first_name', 'last_name', 'bio', 'role',
-        )
-        validators = [
-            UniqueTogetherValidator(
-                queryset=User.objects.all(),
-                fields=('email',),
-                message='Почтовый адресс уже используется'
-            ),
-            UniqueTogetherValidator(
-                queryset=User.objects.all(),
-                fields=('username',),
-                message='Имя пользователя уже используется'
-            )
-        ]
-
-
-class ConfirmationCodeSerializer(serializers.Serializer):
-    confirmation_code = serializers.CharField(required=True)
-    username = serializers.CharField(required=True, max_length=150)
