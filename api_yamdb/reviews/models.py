@@ -27,9 +27,9 @@ class UserRoles:
 
 class User(AbstractUser):
     role_user = (
-        ("user", "user"),
-        ("moderator", "moderator"),
-        ("admin", "admin"),
+        (UserRoles.USER, UserRoles.USER),
+        (UserRoles.MODERATOR, UserRoles.MODERATOR),
+        (UserRoles.ADMIN, UserRoles.ADMIN),
     )
     username = models.CharField(max_length=150,
                                 unique=True,
