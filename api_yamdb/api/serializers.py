@@ -3,6 +3,7 @@ import re
 
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
+
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
@@ -39,7 +40,7 @@ class SendCodeSerializer(serializers.Serializer):
     class Meta:
         model = User
         fields = (
-            'username', 'email', 'first_name', 'last_name', 'bio', 'role',
+            "username", "email", "first_name", "last_name", "bio", "role",
         )
 
 
@@ -117,11 +118,11 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
 
     def validate(self, data):
-        user = self.context['request'].user
-        title_id = self.context['view'].kwargs.get(['title_id'][0])
+        user = self.context["request"].user
+        title_id = self.context["view"].kwargs.get(["title_id"][0])
         title = get_object_or_404(Title, id=title_id)
 
-        if (self.context['request'].method == 'POST'
+        if (self.context["request"].method == "POST"
                 and Review.objects.filter(title=title, author=user).exists()):
             raise serializers.ValidationError(
                 {"message": "Автор уже оставлял отзыв на это произведение!"}

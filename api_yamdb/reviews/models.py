@@ -32,8 +32,7 @@ class User(AbstractUser):
         (UserRoles.ADMIN, UserRoles.ADMIN),
     )
     username = models.CharField(max_length=150,
-                                unique=True,
-                                blank=False, null=False)
+                                unique=True)
     role = models.CharField(max_length=16,
                             choices=role_user, default="user")
     bio = models.TextField(blank=True,
