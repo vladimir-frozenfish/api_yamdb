@@ -1,5 +1,7 @@
-# api_yamdb
-api_yamdb
+## api_yamdb
+Rest API YaMDb - база отзывов о фильмах, книгах, других произведениях.
+
+
 
 ### Как запустить проект:
 
@@ -9,9 +11,6 @@ api_yamdb
 git clone https://github.com/.../
 ```
 
-```
-cd ...
-```
 
 Cоздать и активировать виртуальное окружение:
 
@@ -30,7 +29,7 @@ python3 -m pip install --upgrade pip
 Установить зависимости из файла requirements.txt:
 
 ```
-cd ..
+pip install -r requirements.txt
 ```
 
 Выполнить миграции:
